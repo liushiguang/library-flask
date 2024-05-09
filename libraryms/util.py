@@ -55,3 +55,14 @@ def book_to_dict(book: Book):
             'number': book.number,
             'cover': book.cover
         }
+
+def user_to_dict(user: User):
+    return {
+            'user_account': user.user_account,
+            'user_name': user.user_name,
+            'user_password': user.user_password,
+            'gender': user.gender,
+            'phone': user.phone,
+            'email': user.email,
+            'profile': user.profile
+        }
