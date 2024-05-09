@@ -13,7 +13,6 @@ class Book(db.Model):
     author = db.Column(db.String(50))
     category = db.Column(db.String(50))
     press = db.Column(db.String(50))
-    location = db.Column(db.String(50))
     introduction = db.Column(db.Text)
     stars = db.Column(db.Integer)
     number = db.Column(db.Integer)
