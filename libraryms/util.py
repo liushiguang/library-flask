@@ -46,11 +46,10 @@ class ResposeCode(Enum):
 
 def book_to_dict(book: Book):
     return {
-            'id': book.id,
             'book_name': book.book_name,
             'author': book.author,
             'category': book.category,
-            'press': book.book_press,
+            'press': book.press,
             'introduction': book.introduction,
             'stars': book.stars,
             'number': book.number,

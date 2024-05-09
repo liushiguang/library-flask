@@ -21,7 +21,6 @@ import json
         GET /books
             /books/id
 '''
-
 # 增 POST
 @app.route('/books', methods=['POST'])
 def add_book():
@@ -68,6 +67,7 @@ def update_book(id):
         if hasattr(book, key) and getattr(book, key) != value:
             setattr(book, key, value)
 
+    # 提交到数据库
     db.session.commit()
 
     # 响应消息
@@ -79,17 +79,21 @@ def update_book(id):
 # 查 GET
 @app.route('/books', methods=['GET'])
 def get_all_books():
+    # 查询所有的Book对象
     books = Book.query.all()
 
-
+    # 将Book对象转换成字典格式
+    json_books = [book_to_dict(book) for book in books]
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
-    return 'get books'
+    return jsonify(APIResponse(ResposeCode.GET_BOOK_SUCCESS.value, data=json_books, msg=None).__dict__)
 
 @app.route('/books/<int:id>', methods=['GET'])
 def get_book(id):
+    # 通过id找到对应的Book对象
     book = Book.query.get(id)
 
+    # 将Book对象转换成字典格式
     json_book = book_to_dict(book)
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
