@@ -26,7 +26,7 @@ class Borrow(db.Model):
     book_name = db.Column(db.String(50))
     borrow_date = db.Column(db.Date)
     expired_date = db.Column(db.Date)
-    is_return = db.Column(db.Boolean)
+    is_return = db.Column(db.Boolean) # 是否归还 0 未归还 1 已归还
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
@@ -45,6 +45,15 @@ class ULibrary(db.Model):
     press = db.Column(db.String(50))
     introduction = db.Column(db.Text)
 
+class UBorrow(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
+    borrower_id = db.Column(db.Integer)
+    lender_id = db.Column(db.Integer)
+    book_id = db.Column(db.Integer)
+    borrow_date = db.Column(db.Date)
+    is_agree = db.Column(db.Integer)  # 是否同意 -1 拒绝 0 未操作 1 已同意
+    is_return = db.Column(db.Integer) # 是否归还 0 未归还 1 已归还
+
 class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     user_account = db.Column(db.String(20))
@@ -54,3 +63,17 @@ class User(db.Model):
     phone = db.Column(db.String(11))
     email = db.Column(db.String(20))
     profile = db.Column(db.Text)
+
+class Annocement(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
+    title = db.Column(db.String(80))
+    content = db.Column(db.Text)
+    publish_time = db.Column(db.DateTime)
+
+class consult(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
+    user_id = db.Column(db.Integer)
+    user_name = db.Column(db.String(50))
+    title = db.Column(db.String(80))
+    content = db.Column(db.Text)
+    consult_date = db.Column(db.DateTime)
