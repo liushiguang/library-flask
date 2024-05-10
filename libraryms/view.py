@@ -212,5 +212,31 @@ def get_user(id):
     return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=json_user, msg=msg).__dict__)
 
 
+@app.route('/login', methods=['GET'])
+def login_by_account():
+    # 获取前端发送过来的账号和密码信息
+    account = request.json.get('user_account')
+    password = request.json.get('user_password')
+
+    # 在数据库中查找是否存在对应账号的用户
+    user = User.query.filter_by(user_account=account).first()
+
+    if user and user.user_password == password:
+        # 如果账号密码匹配成功，返回除了密码以外的个人信息给前端
+        user_info = {
+            'user_id': user.user_id,
+            'user_account': user.user_account,
+            'user_name': user.user_name,
+            'gender': user.gender,
+            'phone': user.phone,
+            'email': user.email,
+            'profile': user.profile
+        }
+        return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=user_info, msg='success').__dict__)
+    else:
+        # 如果账号密码匹配失败，返回错误信息给前端
+        return jsonify(APIResponse(ResposeCode.GET_USER_ERR.value, data='', msg='error').__dict__)
+
+
 if __name__ == '__main__':
     app.run()
