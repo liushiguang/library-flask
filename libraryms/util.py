@@ -1,11 +1,14 @@
 from enum import Enum
-from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User
+from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, Announcement, Consult, UBorrow
+
+
 # 定义返回数据的规范类
 class APIResponse:
     def __init__(self, code, data=None, msg=None):
         self.code = code
         self.data = data
         self.msg = msg
+
 
 class ResposeCode(Enum):
     '''
@@ -46,23 +49,94 @@ class ResposeCode(Enum):
 
 def book_to_dict(book: Book):
     return {
-            'book_name': book.book_name,
-            'author': book.author,
-            'category': book.category,
-            'press': book.press,
-            'introduction': book.introduction,
-            'stars': book.stars,
-            'number': book.number,
-            'cover': book.cover
-        }
+        'book_name': book.book_name,
+        'author': book.author,
+        'category': book.category,
+        'press': book.press,
+        'introduction': book.introduction,
+        'stars': book.stars,
+        'number': book.number,
+        'cover': book.cover
+    }
+
 
 def user_to_dict(user: User):
     return {
-            'user_account': user.user_account,
-            'user_name': user.user_name,
-            'user_password': user.user_password,
-            'gender': user.gender,
-            'phone': user.phone,
-            'email': user.email,
-            'profile': user.profile
-        }
+        'user_account': user.user_account,
+        'user_name': user.user_name,
+        'user_password': user.user_password,
+        'gender': user.gender,
+        'phone': user.phone,
+        'email': user.email,
+        'profile': user.profile
+    }
+
+
+def borrow_to_dict(borrow: Borrow):
+    return {
+        'id': borrow.id,
+        'user_id': borrow.user_id,
+        'user_name': borrow.user_name,
+        'book_id': borrow.book_id,
+        'book_name': borrow.book_name,
+        'borrow_date': borrow.borrow_date,
+        'expired_date': borrow.expired_date,
+        'is_return': borrow.is_return,
+        'is_agree': borrow.is_agree
+    }
+
+
+def comment_to_dict(comment: Comment):
+    return {
+        'id': comment.id,
+        'user_id': comment.user_id,
+        'user_name': comment.user_name,
+        'book_id': comment.book_id,
+        'content': comment.content,
+        'comment_date': comment.comment_date
+    }
+
+
+def u_library_to_dict(u_library: ULibrary):
+    return {
+        'id': u_library.id,
+        'user_id': u_library.user_id,
+        'book_name': u_library.book_name,
+        'author': u_library.author,
+        'category': u_library.category,
+        'press': u_library.press,
+        'introduction': u_library.introduction
+    }
+
+
+def u_borrow_to_dict(u_borrow: UBorrow):
+    return {
+        'id': u_borrow.id,
+        'borrow_id': u_borrow.borrower_id,
+        'lender_id': u_borrow.lender_id,
+        'book_id': u_borrow.book_id,
+        'book_name': u_borrow.book_name,
+        'borrow_date': u_borrow.borrow_date,
+        'is_agree': u_borrow.is_agree,
+        'is_return': u_borrow.is_return
+    }
+
+
+def announcement_to_dict(announcement: Announcement):
+    return {
+        'id': announcement.id,
+        'title': announcement.title,
+        'content': announcement.content,
+        'publish_time': announcement.publish_time
+    }
+
+
+def consult_to_dict(consult: Consult):
+    return {
+        'id': consult.id,
+        'user_id': consult.user_id,
+        'user_name': consult.user_name,
+        'title': consult.title,
+        'content': consult.content,
+        'consult_date': consult.consult_date
+    }

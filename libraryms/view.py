@@ -21,6 +21,8 @@ import json
         GET /books
             /books/id
 '''
+
+
 # 增 POST
 @app.route('/books', methods=['POST'])
 def add_book():
@@ -38,6 +40,7 @@ def add_book():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.ADD_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
 
+
 # 删 DELETE
 @app.route('/books/<int:id>', methods=['DELETE'])
 def delete_book(id):
@@ -52,6 +55,7 @@ def delete_book(id):
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.DELETE_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
+
 
 # 改 PUT
 @app.route('/books/<int:id>', methods=['PUT'])
@@ -76,6 +80,7 @@ def update_book(id):
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.UPDATE_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
 
+
 # 查 GET
 @app.route('/books', methods=['GET'])
 def get_all_books():
@@ -89,6 +94,7 @@ def get_all_books():
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BOOK_SUCCESS.value, data=json_books, msg=msg).__dict__)
+
 
 @app.route('/books/<int:id>', methods=['GET'])
 def get_book(id):
@@ -117,6 +123,8 @@ def get_book(id):
             /users/id
     TODO 密码加密
 '''
+
+
 # 增 POST
 @app.route('/users', methods=['POST'])
 def add_user():
@@ -134,6 +142,7 @@ def add_user():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.ADD_USER_SUCCESS.value, data=None, msg=msg).__dict__)
 
+
 # 删 DELETE
 @app.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
@@ -148,6 +157,7 @@ def delete_user(id):
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.DELETE_USER_SUCCESS.value, data=None, msg=msg).__dict__)
+
 
 # 改 PUT
 @app.route('/users/<int:id>', methods=['PUT'])
@@ -172,6 +182,7 @@ def update_user(id):
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.UPDATE_USER_SUCCESS.value, data=None, msg=msg).__dict__)
 
+
 # 查 GET
 @app.route('/users', methods=['GET'])
 def get_all_users():
@@ -186,6 +197,7 @@ def get_all_users():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=json_users, msg=msg).__dict__)
 
+
 @app.route('/users/<int:id>', methods=['GET'])
 def get_user(id):
     # 通过id找到对应的User对象
@@ -198,6 +210,7 @@ def get_user(id):
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=json_user, msg=msg).__dict__)
+
 
 if __name__ == '__main__':
     app.run()
