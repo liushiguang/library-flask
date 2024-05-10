@@ -212,7 +212,7 @@ def get_user(id):
     return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=json_user, msg=msg).__dict__)
 
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST'])
 def login_by_account():
     # 获取前端发送过来的账号和密码信息
     account = request.json.get('user_account')
