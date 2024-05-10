@@ -16,6 +16,11 @@ class ResposeCode(Enum):
         第四位代表对不同的表进行操作
             1 代表Book表
             2 代表User表
+            4 代表ULibrary表
+            5 代表UBorrow表
+            6 代表Borrow表
+            7 代表consult表
+            8 代表announcement表
             ...(待补充)
         第五位代表操作的类型
             1 代表增
@@ -45,6 +50,61 @@ class ResposeCode(Enum):
     DELETE_USER_ERR = 40022
     UPDATE_USER_ERR = 40023
     GET_USER_ERR = 40024
+
+    # ULibrary表桩体阿妈
+    ADD_ULibrary_SUCCESS = 20041
+    DELETE_ULibrary_SUCCESS = 20042
+    UPDATE_ULibrary_SUCCESS = 20043
+    GET_ULibrary_SUCCESS = 20044
+
+    ADD_ULibrary_ERR = 40041
+    DELETE_ULibrary_ERR = 40042
+    UPDATE_ULibrary_ERR = 40043
+    GET_ULibrary_ERR = 40044
+
+    # UBorrow表状态码
+    ADD_UBorrow_SUCCESS = 20051
+    DELETE_UBorrow_SUCCESS = 20052
+    UPDATE_UBorrow_SUCCESS = 20053
+    GET_UBorrow_SUCCESS = 20054
+
+    ADD_UBorrow_ERR = 40051
+    DELETE_UBorrow_ERR = 40052
+    UPDATE_UBorrow_ERR = 40053
+    GET_UBorrow_ERR = 40054
+
+    # Borrow表状态码
+    ADD_Borrow_SUCCESS = 20061
+    DELETE_Borrow_SUCCESS = 20062
+    UPDATE_Borrow_SUCCESS = 20063
+    GET_Borrow_SUCCESS = 20064
+
+    ADD_Borrow_ERR = 40061
+    DELETE_Borrow_ERR = 40062
+    UPDATE_Borrow_ERR = 40063
+    GET_Borrow_ERR = 40064
+
+    # consult表状态码
+    ADD_Consult_SUCCESS = 20071
+    DELETE_Consult_SUCCESS = 20072
+    UPDATE_Consult_SUCCESS = 20073
+    GET_Consult_SUCCESS = 20074
+
+    ADD_Consult_ERR = 40071
+    DELETE_Consult_ERR = 40072
+    UPDATE_Consult_ERR = 40073
+    GET_Consult_ERR = 40074
+
+    # announcement表状态码
+    ADD_Announcement_SUCCESS = 20081
+    DELETE_Announcement_SUCCESS = 20082
+    UPDATE_Announcement_SUCCESS = 20083
+    GET_Announcement_SUCCESS = 20084
+
+    ADD_Announcement_ERR = 40081
+    DELETE_Announcement_ERR = 40082
+    UPDATE_Announcement_ERR = 40083
+    GET_Announcement_ERR = 40084
 
 
 def book_to_dict(book: Book):
