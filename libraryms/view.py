@@ -56,6 +56,8 @@ def delete_book(id):
 # 改 PUT
 @app.route('/books/<int:id>', methods=['PUT'])
 def update_book(id):
+    # TODO 封面
+
     # 通过id找到对应的Book对象
     book = Book.query.get(id)
 
@@ -152,6 +154,8 @@ def delete_user(id):
 # 改 PUT
 @app.route('/users/<int:id>', methods=['PUT'])
 def update_user(id):
+    # TODO 封面
+
     # 通过id找到对应的User对象
     user = User.query.get(id)
 

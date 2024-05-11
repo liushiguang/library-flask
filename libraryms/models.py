@@ -63,6 +63,7 @@ class User(db.Model):
     phone = db.Column(db.String(11))
     email = db.Column(db.String(20))
     profile = db.Column(db.Text)
+    cover = db.Column(db.String(255))
 
 class Annocement(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)

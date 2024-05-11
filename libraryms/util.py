@@ -64,5 +64,6 @@ def user_to_dict(user: User):
             'gender': user.gender,
             'phone': user.phone,
             'email': user.email,
-            'profile': user.profile
+            'profile': user.profile,
+            'cover': user.cover
         }
