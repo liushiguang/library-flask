@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 from libraryms import app, db
 from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, UBorrow, Announcement, Consult
-from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict
+from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict
 import json
 
 # TODO 处理异常操作
@@ -61,6 +61,8 @@ def delete_book(id):
 # 改 PUT
 @app.route('/books/<int:id>', methods=['PUT'])
 def update_book(id):
+    # TODO 封面
+
     # 通过id找到对应的Book对象
     book = Book.query.get(id)
 
@@ -163,6 +165,8 @@ def delete_user(id):
 # 改 PUT
 @app.route('/users/<int:id>', methods=['PUT'])
 def update_user(id):
+    # TODO 头像
+
     # 通过id找到对应的User对象
     user = User.query.get(id)
 
@@ -211,6 +215,128 @@ def get_user(id):
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_USER_SUCCESS.value, data=json_user, msg=msg).__dict__)
+
+
+'''
+    Borrow 模块
+    增:
+        POST /borrows
+    删:
+        DELETE /borrows/id
+    改:
+        PUT /borrows/id
+    查:
+        GET /borrows
+            /borrows/id
+'''
+# 增 POST
+@app.route('/borrows', methods=['POST'])
+def add_borrow():
+    # 接受前端传来的json格式的数据
+    data = request.get_json(force=True)
+    # 创建一个新的Borrows对象
+    new_borrow = Borrow(**data)
+    # 添加到数据库
+    db.session.add(new_borrow)
+    db.session.commit()
+
+    # 响应消息
+    msg = f"用户{new_borrow.user_name}在{new_borrow.borrow_date}申请借阅了{new_borrow.book_name}"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.ADD_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
+
+# 取消某个借书申请
+@app.route('/borrows/<int:id>', methods=['DELETE'])
+def delete_borrows(id):
+    try:
+        # 查询是否存在对应的借阅记录
+        borrow = Borrow.query.get(id)
+        if not borrow:
+            return jsonify(APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='未发现该图书').__dict__)
+
+        db.session.delete(borrow)  # 从数据库中删除借阅记录
+        db.session.commit()
+
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_SUCCESS.value, data="",
+                                   msg='取消申请成功').__dict__)
+    except Exception as e:
+        return jsonify(
+            APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+# 还特定书籍与同意借阅特定书籍
+@app.route('/borrows/<int:id>', methods=['PUT'])
+def update_borrow(id):
+    try:
+        # 查询是否存在对应的借阅记录
+        borrow = Borrow.query.get(id)
+        if not borrow:
+            return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='未发现记录').__dict__)
+
+        # WARNING 你这样写代码把我的路全部堵死了
+        # 将对应的借阅记录的 is_return 字段设置为 1
+        # borrow.is_return = 1
+        # db.session.commit()
+
+        # 接受前端传来的json格式的数据
+        data = request.get_json(force=True)
+
+        for key, value in data.items():
+            # 如果这个属性存在并且值不相等，就修改这个属性的值
+            if hasattr(borrow, key) and getattr(borrow, key) != value:
+                setattr(borrow, key, value)
+
+        # 提交到数据库
+        db.session.commit()
+
+        # 响应消息
+        msg = ""
+        # 判断是处理借阅申请还是归还申请
+        if borrow.is_agree != data.is_agree:
+            if borrow.is_agree == 1:
+                msg = f"通过了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
+            # 拒绝借阅
+            if borrow.is_agree == -1:
+                msg = f"拒绝了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
+
+        elif borrow.is_return != data.is_return:
+            if data.is_return == 1:
+                msg = f"用户{borrow.user_name}在{borrow.borrow_date}归还了图书{borrow.book_name}"
+
+        # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+    except Exception as e:
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='error').__dict__)
+
+# 查 GET
+@app.route('/borrows', methods=['GET'])
+def get_all_borrows():
+    # 查询所有的Borrow对象
+    borrows = Borrow.query.all()
+
+    # 将Borrow对象转换成字典格式
+    json_borrows = [borrow_to_dict(borrow) for borrow in borrows]
+    # 响应消息
+    msg = "查询所有借阅关系成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
+
+
+@app.route('/borrows/<int:id>', methods=['GET'])
+def get_borrow(id):
+    # 通过id找到对应的Borrow对象
+    borrow = Borrow.query.get(id)
+
+    # 将Borrow对象转换成字典格式
+    json_borrow = borrow_to_dict(borrow)
+    # 响应消息
+    msg = f"查询到用户{borrow.user_name}在{borrow.borrow_date}申请借阅了{borrow.book_name}"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrow, msg=msg).__dict__)
 
 
 # ——————————————————————————————————————————————————————————————————
@@ -274,16 +400,16 @@ def agree_asks(id):
     borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
     borrow_request.is_agree = 1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
-    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value,data='',msg='success').__dict__)
+    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
 
 
 # 拒绝
-@app.route('/asksRefuse/<int:id>',methods=['POST'])
+@app.route('/asksRefuse/<int:id>', methods=['POST'])
 def refuse_asks(id):
     borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
     borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
-    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value,data='',msg='success').__dict__)
+    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
 
 
 # 查个人借阅信息
@@ -316,46 +442,9 @@ def get_borrows(user_id):
             }
             borrow_data.append(borrow_info)
 
-        return jsonify(APIResponse(ResposeCode.GET_Borrow_SUCCESS.value, data=borrow_data, msg='success').__dict__)
+        return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
     except Exception as e:
-        return jsonify(APIResponse(ResposeCode.GET_Borrow_ERR.value, data="", msg='error').__dict__)
-
-
-# 取消某个借书申请
-@app.route('/borrows/<int:id>', methods=['DELETE'])
-def delete_borrows(id):
-    try:
-        # 查询是否存在对应的借阅记录
-        borrow = Borrow.query.get(id)
-        if not borrow:
-            return jsonify(APIResponse(ResposeCode.DELETE_Borrow_ERR.value, data="", msg='未发现该图书').__dict__)
-
-        db.session.delete(borrow)  # 从数据库中删除借阅记录
-        db.session.commit()
-
-        return jsonify(APIResponse(ResposeCode.DELETE_Borrow_SUCCESS.value, data="",
-                                   msg='取消申请成功').__dict__)
-    except Exception as e:
-        return jsonify(
-            APIResponse(ResposeCode.DELETE_Borrow_ERR.value, data="", msg='error').__dict__)
-
-
-# 还特定书籍
-@app.route('/borrows/<int:id>', methods=['PUT'])
-def update_borrows(id):
-    try:
-        # 查询是否存在对应的借阅记录
-        borrow = Borrow.query.get(id)
-        if not borrow:
-            return jsonify(APIResponse(ResposeCode.UPDATE_Borrow_ERR.value, data="", msg='未发现记录').__dict__)
-
-        # 将对应的借阅记录的 is_return 字段设置为 1
-        borrow.is_return = 1
-        db.session.commit()
-
-        return jsonify(APIResponse(ResposeCode.UPDATE_Borrow_SUCCESS.value, data="", msg='还书成功！').__dict__)
-    except Exception as e:
-        return jsonify(APIResponse(ResposeCode.UPDATE_Borrow_ERR.value, data="", msg='error').__dict__)
+        return jsonify(APIResponse(ResposeCode.GET_BORROW_ERR.value, data="", msg='error').__dict__)
 
 
 # 查借书记录
@@ -383,9 +472,9 @@ def get_borrows_history(user_id):
                 }
                 borrow_data.append(book_info)
 
-        return jsonify(APIResponse(ResposeCode.GET_Borrow_SUCCESS.value, data=borrow_data, msg='success').__dict__)
+        return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
     except Exception as e:
-        return jsonify(APIResponse(ResposeCode.GET_Borrow_ERR.value, data="", msg='error').__dict__)
+        return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data="", msg='error').__dict__)
 
 
 # 删除借书记录
@@ -395,17 +484,17 @@ def delete_borrows_history(id):
         # 查询是否存在对应的借阅记录
         borrow = Borrow.query.get(id)
         if not borrow:
-            return jsonify(APIResponse(ResposeCode.DELETE_Borrow_ERR.value, data="", msg='未发现记录').__dict__)
+            return jsonify(APIResponse(ResposeCode.DELETE_BORROW_SUCCESS.value, data="", msg='未发现记录').__dict__)
 
         # 删除记录
         db.session.delete(borrow)
         db.session.commit()
 
-        return jsonify(APIResponse(ResposeCode.DELETE_Borrow_SUCCESS.value, data="",
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_SUCCESS.value, data="",
                                    msg='删除成功！').__dict__)
     except Exception as e:
         return jsonify(
-            APIResponse(ResposeCode.DELETE_Borrow_ERR.value, data="", msg='error').__dict__)
+            APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
 
 
 # 个人图书馆资源查询
@@ -476,14 +565,13 @@ def get_other_resource(borrower_id):
             UBorrow.borrower_id == borrower_id,
             (UBorrow.is_agree == 0) | ((UBorrow.is_agree == 1) & (UBorrow.is_return == 0))
         ).with_entities(
-            UBorrow.lender_id,
             UBorrow.id,
             UBorrow.book_id,
             UBorrow.book_name,
             UBorrow.borrow_date,
-            UBorrow.is_agree
+            UBorrow.is_agree,
+            UBorrow.lender_id
         ).all()
-
         # 封装数据
         borrow_data = []
         for borrow in borrow_info:
@@ -577,9 +665,10 @@ def get_announcements():
             }
             announcement_data.append(announcement_info)
 
-        return jsonify(APIResponse(ResposeCode.GET_Announcement_SUCCESS.value, data=announcement_data, msg='success').__dict__)
+        return jsonify(
+            APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=announcement_data, msg='success').__dict__)
     except Exception as e:
-        return jsonify(APIResponse(ResposeCode.GET_Announcement_ERR.value, data="", msg='error').__dict__)
+        return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_ERR.value, data="", msg='error').__dict__)
 
 
 # 读者咨询
@@ -600,11 +689,9 @@ def post_consults():
         db.session.add(new_consult)
         db.session.commit()
 
-        return jsonify(APIResponse(ResposeCode.ADD_Consult_SUCCESS.value, data="", msg='success').__dict__)
+        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_SUCCESS.value, data="", msg='success').__dict__)
     except Exception as e:
-        print("Error:", e)
-        return jsonify(APIResponse(ResposeCode.ADD_Consult_ERR.value, data="", msg='error').__dict__)
-
+        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_ERR.value, data="", msg='error').__dict__)
 
 # ——————————————————————————————————————————————————————————————————
 

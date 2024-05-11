@@ -1,7 +1,5 @@
 from enum import Enum
 from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, Announcement, Consult, UBorrow
-
-
 # 定义返回数据的规范类
 class APIResponse:
     def __init__(self, code, data=None, msg=None):
@@ -9,18 +7,17 @@ class APIResponse:
         self.data = data
         self.msg = msg
 
-
 class ResposeCode(Enum):
     '''
         状态码中200 400 代表成功与否 第四位代表
         第四位代表对不同的表进行操作
             1 代表Book表
             2 代表User表
-            4 代表ULibrary表
-            5 代表UBorrow表
+            3 代表Announcement表
+            4 代表U_Library表
+            5 代表U_Borrow表
             6 代表Borrow表
-            7 代表consult表
-            8 代表announcement表
+            7 代表Consult表
             ...(待补充)
         第五位代表操作的类型
             1 代表增
@@ -51,7 +48,18 @@ class ResposeCode(Enum):
     UPDATE_USER_ERR = 40023
     GET_USER_ERR = 40024
 
-    # ULibrary表桩体阿妈
+    # Announcement表状态码
+    ADD_ANNOUNCEMENT_SUCCESS = 20031
+    DELETE_ANNOUNCEMENT_SUCCESS = 20032
+    UPDATE_ANNOUNCEMENT_SUCCESS = 20033
+    GET_ANNOUNCEMENT_SUCCESS = 20034
+
+    ADD_ANNOUNCEMENT_ERR = 40031
+    DELETE_ANNOUNCEMENT_ERR = 40032
+    UPDATE_ANNOUNCEMENT_ERR = 40033
+    GET_ANNOUNCEMENT_ERR = 40034
+
+    # U_Library表状态码
     ADD_ULibrary_SUCCESS = 20041
     DELETE_ULibrary_SUCCESS = 20042
     UPDATE_ULibrary_SUCCESS = 20043
@@ -62,7 +70,7 @@ class ResposeCode(Enum):
     UPDATE_ULibrary_ERR = 40043
     GET_ULibrary_ERR = 40044
 
-    # UBorrow表状态码
+    # U_Borrow表状态码
     ADD_UBorrow_SUCCESS = 20051
     DELETE_UBorrow_SUCCESS = 20052
     UPDATE_UBorrow_SUCCESS = 20053
@@ -74,54 +82,44 @@ class ResposeCode(Enum):
     GET_UBorrow_ERR = 40054
 
     # Borrow表状态码
-    ADD_Borrow_SUCCESS = 20061
-    DELETE_Borrow_SUCCESS = 20062
-    UPDATE_Borrow_SUCCESS = 20063
-    GET_Borrow_SUCCESS = 20064
+    ADD_BORROW_SUCCESS = 20061
+    DELETE_BORROW_SUCCESS = 20062
+    UPDATE_BORROW_SUCCESS = 20063
+    GET_BORROW_SUCCESS = 20064
 
-    ADD_Borrow_ERR = 40061
-    DELETE_Borrow_ERR = 40062
-    UPDATE_Borrow_ERR = 40063
-    GET_Borrow_ERR = 40064
+    ADD_BORROW_ERR = 40061
+    DELETE_BORROW_ERR = 40062
+    UPDATE_BORROW_ERR = 40063
+    GET_BORROW_ERR = 40064
 
-    # consult表状态码
-    ADD_Consult_SUCCESS = 20071
-    DELETE_Consult_SUCCESS = 20072
-    UPDATE_Consult_SUCCESS = 20073
-    GET_Consult_SUCCESS = 20074
+    # Consult表状态码
+    ADD_CONSULT_SUCCESS = 20071
+    DELETE_CONSULT_SUCCESS = 20072
+    UPDATE_CONSULT_SUCCESS = 20073
+    GET_CONSULT_SUCCESS = 20074
 
-    ADD_Consult_ERR = 40071
-    DELETE_Consult_ERR = 40072
-    UPDATE_Consult_ERR = 40073
-    GET_Consult_ERR = 40074
-
-    # announcement表状态码
-    ADD_Announcement_SUCCESS = 20081
-    DELETE_Announcement_SUCCESS = 20082
-    UPDATE_Announcement_SUCCESS = 20083
-    GET_Announcement_SUCCESS = 20084
-
-    ADD_Announcement_ERR = 40081
-    DELETE_Announcement_ERR = 40082
-    UPDATE_Announcement_ERR = 40083
-    GET_Announcement_ERR = 40084
+    ADD_CONSULT_ERR = 40071
+    DELETE_CONSULT_ERR = 40072
+    UPDATE_CONSULT_ERR = 40073
+    GET_CONSULT_ERR = 40074
 
 
 def book_to_dict(book: Book):
     return {
-        'book_name': book.book_name,
-        'author': book.author,
-        'category': book.category,
-        'press': book.press,
-        'introduction': book.introduction,
-        'stars': book.stars,
-        'number': book.number,
-        'cover': book.cover
-    }
-
+            'book_id': book.book_id,
+            'book_name': book.book_name,
+            'author': book.author,
+            'category': book.category,
+            'press': book.press,
+            'introduction': book.introduction,
+            'stars': book.stars,
+            'number': book.number,
+            'cover': book.cover
+        }
 
 def user_to_dict(user: User):
     return {
+        'user_id': user.user_id,
         'user_account': user.user_account,
         'user_name': user.user_name,
         'user_password': user.user_password,
