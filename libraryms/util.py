@@ -49,17 +49,17 @@ class ResposeCode(Enum):
     GET_USER_ERR = 40024
 
     # Announcement表状态码
-    ADD_Announcement_SUCCESS = 20031
-    DELETE_Announcement_SUCCESS = 20032
-    UPDATE_Announcement_SUCCESS = 20033
-    GET_Announcement_SUCCESS = 20034
+    ADD_ANNOUNCEMENT_SUCCESS = 20031
+    DELETE_ANNOUNCEMENT_SUCCESS = 20032
+    UPDATE_ANNOUNCEMENT_SUCCESS = 20033
+    GET_ANNOUNCEMENT_SUCCESS = 20034
 
-    ADD_Announcement_ERR = 40031
-    DELETE_Announcement_ERR = 40032
-    UPDATE_Announcement_ERR = 40033
-    GET_Announcement_ERR = 40034
+    ADD_ANNOUNCEMENT_ERR = 40031
+    DELETE_ANNOUNCEMENT_ERR = 40032
+    UPDATE_ANNOUNCEMENT_ERR = 40033
+    GET_ANNOUNCEMENT_ERR = 40034
 
-    # ULibrary表状态码
+    # U_Library表状态码
     ADD_ULibrary_SUCCESS = 20041
     DELETE_ULibrary_SUCCESS = 20042
     UPDATE_ULibrary_SUCCESS = 20043
@@ -70,7 +70,7 @@ class ResposeCode(Enum):
     UPDATE_ULibrary_ERR = 40043
     GET_ULibrary_ERR = 40044
 
-    # UBorrow表状态码
+    # U_Borrow表状态码
     ADD_UBorrow_SUCCESS = 20051
     DELETE_UBorrow_SUCCESS = 20052
     UPDATE_UBorrow_SUCCESS = 20053
@@ -82,26 +82,26 @@ class ResposeCode(Enum):
     GET_UBorrow_ERR = 40054
 
     # Borrow表状态码
-    ADD_Borrow_SUCCESS = 20061
-    DELETE_Borrow_SUCCESS = 20062
-    UPDATE_Borrow_SUCCESS = 20063
-    GET_Borrow_SUCCESS = 20064
+    ADD_BORROW_SUCCESS = 20061
+    DELETE_BORROW_SUCCESS = 20062
+    UPDATE_BORROW_SUCCESS = 20063
+    GET_BORROW_SUCCESS = 20064
 
-    ADD_Borrow_ERR = 40061
-    DELETE_Borrow_ERR = 40062
-    UPDATE_Borrow_ERR = 40063
-    GET_Borrow_ERR = 40064
+    ADD_BORROW_ERR = 40061
+    DELETE_BORROW_ERR = 40062
+    UPDATE_BORROW_ERR = 40063
+    GET_BORROW_ERR = 40064
 
     # Consult表状态码
-    ADD_Consult_SUCCESS = 20071
-    DELETE_Consult_SUCCESS = 20072
-    UPDATE_Consult_SUCCESS = 20073
-    GET_Consult_SUCCESS = 20074
+    ADD_CONSULT_SUCCESS = 20071
+    DELETE_CONSULT_SUCCESS = 20072
+    UPDATE_CONSULT_SUCCESS = 20073
+    GET_CONSULT_SUCCESS = 20074
 
-    ADD_Consult_ERR = 40071
-    DELETE_Consult_ERR = 40072
-    UPDATE_Consult_ERR = 40073
-    GET_Consult_ERR = 40074
+    ADD_CONSULT_ERR = 40071
+    DELETE_CONSULT_ERR = 40072
+    UPDATE_CONSULT_ERR = 40073
+    GET_CONSULT_ERR = 40074
 
 
 def book_to_dict(book: Book):
