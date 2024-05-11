@@ -87,4 +87,4 @@ class Consult(db.Model):
     user_name = db.Column(db.String(50))
     title = db.Column(db.String(80))
     content = db.Column(db.Text)
-    consult_date = db.Column(db.DateTime)
+    consult_time = db.Column(db.DateTime)

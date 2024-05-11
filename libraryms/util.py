@@ -198,5 +198,5 @@ def consult_to_dict(consult: Consult):
         'user_name': consult.user_name,
         'title': consult.title,
         'content': consult.content,
-        'consult_date': consult.consult_date
+        'consult_time': consult.consult_time
     }

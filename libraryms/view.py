@@ -428,7 +428,7 @@ def get_my_resources(user_id):
             # 封装数据
             book_info = {
                 'book_id': book.id,
-                'bookName': book.book_name,
+                'book_name': book.book_name,
                 'author': book.author,
                 'category': book.category,
                 'press': book.press,
@@ -451,6 +451,13 @@ def delete_my_resources(id):
         if not book_to_delete:
             return jsonify(APIResponse(ResposeCode.DELETE_UBorrow_ERR.value, data="", msg='未发现书籍！').__dict__)
 
+        # 查询UBorrow表中对应book_id且is_agree为0的记录
+        u_borrow_records = UBorrow.query.filter_by(book_id=id, is_agree=0).all()
+        # 将这些记录的状态置为-1,即为拒绝
+        for record in u_borrow_records:
+            record.is_return = -1
+
+        db.session.commit()
         # 删除图书
         db.session.delete(book_to_delete)
         db.session.commit()
@@ -469,6 +476,7 @@ def get_other_resource(borrower_id):
             UBorrow.borrower_id == borrower_id,
             (UBorrow.is_agree == 0) | ((UBorrow.is_agree == 1) & (UBorrow.is_return == 0))
         ).with_entities(
+            UBorrow.lender_id,
             UBorrow.id,
             UBorrow.book_id,
             UBorrow.book_name,
@@ -479,12 +487,14 @@ def get_other_resource(borrower_id):
         # 封装数据
         borrow_data = []
         for borrow in borrow_info:
+            lender_name = User.query.filter_by(user_id=borrow.lender_id).first().user_name
             borrow_info = {
                 'id': borrow.id,
                 'book_id': borrow.book_id,
                 'book_name': borrow.book_name,
-                'borrow_date': borrow.borrow_date,
-                'is_agree': borrow.is_agree
+                'borrow_date': borrow.borrow_date.strftime('%Y-%m-%d'),
+                'is_agree': borrow.is_agree,
+                'lender_name': lender_name
             }
             borrow_data.append(borrow_info)
 
@@ -563,7 +573,7 @@ def get_announcements():
                 'id': announcement.id,
                 'title': announcement.title,
                 'content': announcement.content,
-                'publish_time': announcement.publish_time
+                'publish_time': announcement.publish_time.strftime('%Y-%m-%d'),
             }
             announcement_data.append(announcement_info)
 
@@ -585,14 +595,15 @@ def post_consults():
             user_name=data['user_name'],
             title=data['title'],
             content=data['content'],
-            consult_date=datetime.now()  # 记录当前时间
+            consult_time=datetime.now()  # 记录当前时间
         )
         db.session.add(new_consult)
         db.session.commit()
 
         return jsonify(APIResponse(ResposeCode.ADD_Consult_SUCCESS.value, data="", msg='success').__dict__)
     except Exception as e:
-        return jsonify(APIResponse(ResposeCode.ADD_Consult_SUCCESS.value, data="", msg='error').__dict__)
+        print("Error:", e)
+        return jsonify(APIResponse(ResposeCode.ADD_Consult_ERR.value, data="", msg='error').__dict__)
 
 
 # ——————————————————————————————————————————————————————————————————
