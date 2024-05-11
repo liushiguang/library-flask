@@ -217,7 +217,7 @@ def get_user(id):
 # 登录+个人中心+个人图书城+信息专栏API部分
 @app.route('/login', methods=['POST'])
 def login_by_account():
-    # 获取前端发送过来的账号和密码信息
+    # 获取前端发送过来的账号和密码信息us
     account = request.json.get('user_account')
     password = request.json.get('user_password')
 
@@ -254,8 +254,8 @@ def get_asks(user_id):
             # 将借书请求信息封装为字典
             ask_info = {
                 'id': ask.id,
-                'username': borrower_name,
-                'bookName': ask.book_name,
+                'user_name': borrower_name,
+                'book_name': ask.book_name,
                 'time': ask.borrow_date.strftime('%Y-%m-%d')  # 将日期格式化为字符串
             }
 
@@ -266,6 +266,24 @@ def get_asks(user_id):
     else:
         # 如果没有找到相关的借书请求，返回空列表给前端
         return jsonify(APIResponse(ResposeCode.GET_UBorrow_ERR.value, data='', msg='error').__dict__)
+
+
+# 同意他人借阅自己的图书
+@app.route('/asksAgree/<int:id>', methods=['POST'])
+def agree_asks(id):
+    borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
+    borrow_request.is_agree = 1  # 将 is_agree 设置为 1，表示已同意
+    db.session.commit()  # 提交更改到数据库
+    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value,data='',msg='success').__dict__)
+
+
+# 拒绝
+@app.route('/asksRefuse/<int:id>',methods=['POST'])
+def refuse_asks(id):
+    borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
+    borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
+    db.session.commit()  # 提交更改到数据库
+    return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value,data='',msg='success').__dict__)
 
 
 # 查个人借阅信息
@@ -294,7 +312,7 @@ def get_borrows(user_id):
                 'book_name': borrow.book_name,
                 'borrow_date': borrow_date,
                 'expired_date': expired_date,
-                'isAgree': borrow.is_agree
+                'is_agree': borrow.is_agree
             }
             borrow_data.append(borrow_info)
 
