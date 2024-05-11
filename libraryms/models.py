@@ -29,8 +29,8 @@ class Borrow(db.Model):
     book_name = db.Column(db.String(50))
     borrow_date = db.Column(db.Date)
     expired_date = db.Column(db.Date)
-    is_return = db.Column(db.Boolean) # 是否归还 0 未归还 1 已归还
-
+    is_agree = db.Column(db.Integer)  # 是否同意 -1 拒绝 0 未操作 1 已同意
+    is_return = db.Column(db.Boolean)  # 是否归还 0 未归还 1 已归还
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
@@ -41,7 +41,9 @@ class Comment(db.Model):
     comment_date = db.Column(db.Date)
 
 
-class ULibrary(db.Model):
+class U_Library(db.Model):
+    __tablename__ = 'u_library'
+
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     user_id = db.Column(db.Integer)
     book_name = db.Column(db.String(50))
@@ -51,15 +53,17 @@ class ULibrary(db.Model):
     introduction = db.Column(db.Text)
 
 
-class UBorrow(db.Model):
+class U_Borrow(db.Model):
+    __tablename__ = 'u_borrow'
+
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     borrower_id = db.Column(db.Integer)
     lender_id = db.Column(db.Integer)
     book_id = db.Column(db.Integer)
+    book_name = db.Column(db.String(50))
     borrow_date = db.Column(db.Date)
-    is_agree = db.Column(db.Integer)  # 是否同意 -1 拒绝 0 未操作 1 已同意
-    is_return = db.Column(db.Integer) # 是否归还 0 未归还 1 已归还
-
+    is_agree = db.Column(db.Integer)    # 是否同意 -1 拒绝 0 未操作 1 已同意
+    is_return = db.Column(db.Boolean)   # 是否归还 0 未归还 1 已归还
 
 class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
@@ -72,20 +76,21 @@ class User(db.Model):
     profile = db.Column(db.Text)
     cover = db.Column(db.String(255))
 
-
-class Annocement(db.Model):
+class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     title = db.Column(db.String(80))
     content = db.Column(db.Text)
     publish_time = db.Column(db.DateTime)
 
-
-class consult(db.Model):
+class Consult(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     user_id = db.Column(db.Integer)
     user_name = db.Column(db.String(50))
     title = db.Column(db.String(80))
     content = db.Column(db.Text)
-    consult_date = db.Column(db.DateTime)
+    consult_time = db.Column(db.DateTime)
 
-
+class TTS_Info:
+    def __init__(self, book_name, text):
+        self.book_name = book_name
+        self.text = text
