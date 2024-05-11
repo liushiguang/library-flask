@@ -272,7 +272,7 @@ def update_borrow(id):
     if borrow.is_agree == 1:
         msg = f"通过了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
     # 拒绝借阅
-    if borrow.is_agree == -0:
+    if borrow.is_agree == -1:
         msg = f"拒绝了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
