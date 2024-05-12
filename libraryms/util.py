@@ -1,5 +1,5 @@
 from enum import Enum
-from libraryms.models import Administrator, Book, Borrow, Comment, U_Library, User, Announcement, Consult, U_Borrow
+from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, Announcement, Consult, UBorrow
 # 定义返回数据的规范类
 class APIResponse:
     def __init__(self, code, data=None, msg=None):
@@ -137,7 +137,6 @@ class AccessKey(Enum):
 
 def book_to_dict(book: Book):
     return {
-            # 增加id
             'book_id': book.book_id,
             'book_name': book.book_name,
             'author': book.author,
@@ -154,14 +153,14 @@ def user_to_dict(user: User):
     return {
         'user_id': user.user_id,
         'user_account': user.user_account,
-            'user_name': user.user_name,
-            'user_password': user.user_password,
-            'gender': user.gender,
-            'phone': user.phone,
-            'email': user.email,
-            'profile': user.profile,
-            'cover': user.cover
-        }
+        'user_name': user.user_name,
+        'user_password': user.user_password,
+        'gender': user.gender,
+        'phone': user.phone,
+        'email': user.email,
+        'profile': user.profile,
+        'cover': user.cover
+    }
 
 
 def comment_to_dict(comment: Comment):
@@ -182,10 +181,21 @@ def borrow_to_dict(borrow: Borrow):
         'user_name': borrow.user_name,
         'book_id': borrow.book_id,
         'book_name': borrow.book_name,
-        'borrow_date': borrow.borrow_date,
-        'expired_date': borrow.expired_date,
+        'borrow_date': borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else None,
+        'expired_date': borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else None,
         'is_return': borrow.is_return,
         'is_agree': borrow.is_agree
+    }
+
+
+def comment_to_dict(comment: Comment):
+    return {
+        'id': comment.id,
+        'user_id': comment.user_id,
+        'user_name': comment.user_name,
+        'book_id': comment.book_id,
+        'content': comment.content,
+        'comment_date': comment.comment_date.strftime('%Y-%m-%d') if comment.comment_date else None
     }
 
 
@@ -201,7 +211,7 @@ def u_library_to_dict(u_library: U_Library):
     }
 
 
-def u_borrow_to_dict(u_borrow: U_Borrow):
+def u_borrow_to_dict(u_borrow: UBorrow):
     return {
         'id': u_borrow.id,
         'borrow_id': u_borrow.borrower_id,
@@ -219,7 +229,7 @@ def announcement_to_dict(announcement: Announcement):
         'id': announcement.id,
         'title': announcement.title,
         'content': announcement.content,
-        'publish_time': announcement.publish_time
+        'publish_time': announcement.publish_time.strftime('%Y-%m-%d %H:%M:%S') if announcement.publish_time else None
     }
 
 
@@ -230,5 +240,5 @@ def consult_to_dict(consult: Consult):
         'user_name': consult.user_name,
         'title': consult.title,
         'content': consult.content,
-        'consult_time': consult.consult_time
+        'consult_time': consult.consult_time.strftime('%Y-%m-%d %H:%M:%S') if consult.consult_time else None
     }
