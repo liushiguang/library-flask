@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 from libraryms import app, db
 from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, UBorrow, Announcement, Consult
-from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict
+from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict, announcement_to_dict, consult_to_dict
 import json
 
 # TODO 处理异常操作
@@ -326,7 +326,6 @@ def get_all_borrows():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
 
-
 # 查个人借阅信息
 # @app.route('/borrows/<int:user_id>', methods=['GET'])
 # def get_borrows(user_id):
@@ -373,6 +372,105 @@ def get_borrow(id):
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrow, msg=msg).__dict__)
+
+
+'''
+    Announcement 模块
+    增:
+        POST /announcements
+    删:
+        DELETE /announcements/id
+    改:
+        PUT /announcements/id
+    查:
+        GET /announcements
+            /announcements/id
+'''
+# 增 POST
+@app.route('/announcements', methods=['POST'])
+def add_announcement():
+    # 接受前端传来的json格式的数据
+    data = request.get_json(force=True)
+    # 创建一个新的Announcement对象
+    new_announcement = Announcement(**data)
+    # 添加到数据库
+    db.session.add(new_announcement)
+    db.session.commit()
+
+    # 响应消息
+    msg = f"发布公告\"{new_announcement.title}\"成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.ADD_ANNOUNCEMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+# 删 DELETE
+@app.route('/announcements/<int:id>', methods=['DELETE'])
+def delete_announcement(id):
+    # 通过id找到对应的Announcement对象
+    announcement = Announcement.query.get(id)
+    # 删除这个对象,并提交到数据库
+    db.session.delete(announcement)
+    db.session.commit()
+
+    # 响应消息
+    msg = f"删除公告\"{announcement.title}\"成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.DELETE_ANNOUNCEMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+# 改 PUT
+@app.route('/announcements/<int:id>', methods=['PUT'])
+def update_announcement(id):
+    # 通过id找到对应的Announcement对象
+    announcement = Announcement.query.get(id)
+
+    # 接受前端传来的json格式的数据
+    data = request.get_json(force=True)
+
+    for key, value in data.items():
+        # 如果这个属性存在并且值不相等，就修改这个属性的值
+        if hasattr(announcement, key) and getattr(announcement, key) != value:
+            setattr(announcement, key, value)
+
+    # 提交到数据库
+    db.session.commit()
+
+    # 响应消息
+    msg = f"修改公告\"{announcement.title}\"成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.UPDATE_ANNOUNCEMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+# 查 GET
+@app.route('/announcements', methods=['GET'])
+def get_all_announcements():
+    # 查询所有的Announcement对象
+    announcements = Announcement.query.all()
+
+    # 将Announcement对象转换成字典格式
+    json_announcements = [announcement_to_dict(announcement) for announcement in announcements]
+    # 响应消息
+    msg = "查询所有公告成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=json_announcements, msg=msg).__dict__)
+
+
+@app.route('/announcements/<int:id>', methods=['GET'])
+def get_announcement(id):
+    # 通过id找到对应的Announcement对象
+    announcement = Announcement.query.get(id)
+
+    # 将Announcement对象转换成字典格式
+    json_announcement = announcement_to_dict(announcement)
+    # 响应消息
+    msg = f"查询公告\"{announcement.title}\"成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=json_announcement, msg=msg).__dict__)
 
 
 # ——————————————————————————————————————————————————————————————————
@@ -649,26 +747,26 @@ def post_my_resources():
 
 
 # 信息专栏公告
-@app.route('/announcements', methods=['GET'])
-def get_announcements():
-    try:
-        # 查询所有公告，并按照时间排序
-        announcements = Announcement.query.order_by(Announcement.publish_time.desc()).all()
-        # 封装数据
-        announcement_data = []
-        for announcement in announcements:
-            announcement_info = {
-                'id': announcement.id,
-                'title': announcement.title,
-                'content': announcement.content,
-                'publish_time': announcement.publish_time.strftime('%Y-%m-%d'),
-            }
-            announcement_data.append(announcement_info)
-
-        return jsonify(
-            APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=announcement_data, msg='success').__dict__)
-    except Exception as e:
-        return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_ERR.value, data="", msg='error').__dict__)
+# @app.route('/announcements', methods=['GET'])
+# def get_announcements():
+#     try:
+#         # 查询所有公告，并按照时间排序
+#         announcements = Announcement.query.order_by(Announcement.publish_time.desc()).all()
+#         # 封装数据
+#         announcement_data = []
+#         for announcement in announcements:
+#             announcement_info = {
+#                 'id': announcement.id,
+#                 'title': announcement.title,
+#                 'content': announcement.content,
+#                 'publish_time': announcement.publish_time.strftime('%Y-%m-%d'),
+#             }
+#             announcement_data.append(announcement_info)
+#
+#         return jsonify(
+#             APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=announcement_data, msg='success').__dict__)
+#     except Exception as e:
+#         return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_ERR.value, data="", msg='error').__dict__)
 
 
 # 读者咨询
