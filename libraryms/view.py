@@ -317,12 +317,46 @@ def get_all_borrows():
 
     # 将Borrow对象转换成字典格式
     json_borrows = [borrow_to_dict(borrow) for borrow in borrows]
+
+    print(json_borrows[0])
+
     # 响应消息
     msg = "查询所有借阅关系成功！"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
 
+
+# 查个人借阅信息
+# @app.route('/borrows/<int:user_id>', methods=['GET'])
+# def get_borrows(user_id):
+#     # 查询用户借阅信息
+#     borrows = Borrow.query.filter_by(user_id=user_id).filter(
+#         (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
+#     # 封装数据
+#     borrow_data = []
+#     for borrow in borrows:
+#         # 查询书籍信息
+#         book = Book.query.filter_by(book_id=borrow.book_id).first()
+#         print(book)
+#         if not book:
+#             continue  # 如果书籍不存在，则跳过当前借阅信息
+#         # 格式化日期
+#         borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
+#         expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
+#         # 封装数据
+#         borrow_info = {
+#             'id': borrow.id,
+#             'book_id': borrow.book_id,
+#             'cover': book.cover,
+#             'book_name': borrow.book_name,
+#             'borrow_date': borrow_date,
+#             'expired_date': expired_date,
+#             'is_agree': borrow.is_agree
+#         }
+#         borrow_data.append(borrow_info)
+#
+#     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
 
 @app.route('/borrows/<int:id>', methods=['GET'])
 def get_borrow(id):
@@ -331,6 +365,9 @@ def get_borrow(id):
 
     # 将Borrow对象转换成字典格式
     json_borrow = borrow_to_dict(borrow)
+
+    print(json_borrow)
+
     # 响应消息
     msg = f"查询到用户{borrow.user_name}在{borrow.borrow_date}申请借阅了{borrow.book_name}"
 
@@ -409,42 +446,6 @@ def refuse_asks(id):
     borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
     return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
-
-
-# 查个人借阅信息
-@app.route('/borrows/<int:user_id>', methods=['GET'])
-def get_borrows(user_id):
-    try:
-        # 查询用户借阅信息
-        borrows = Borrow.query.filter_by(user_id=user_id).filter(
-            (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
-        # 封装数据
-        borrow_data = []
-        for borrow in borrows:
-            # 查询书籍信息
-            book = Book.query.filter_by(book_id=borrow.book_id).first()
-            print(book)
-            if not book:
-                continue  # 如果书籍不存在，则跳过当前借阅信息
-            # 格式化日期
-            borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
-            expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
-            # 封装数据
-            borrow_info = {
-                'id': borrow.id,
-                'book_id': borrow.book_id,
-                'cover': book.cover,
-                'book_name': borrow.book_name,
-                'borrow_date': borrow_date,
-                'expired_date': expired_date,
-                'is_agree': borrow.is_agree
-            }
-            borrow_data.append(borrow_info)
-
-        return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
-    except Exception as e:
-        return jsonify(APIResponse(ResposeCode.GET_BORROW_ERR.value, data="", msg='error').__dict__)
-
 
 # 查借书记录
 @app.route('/borrowsHistory/<int:user_id>', methods=['GET'])

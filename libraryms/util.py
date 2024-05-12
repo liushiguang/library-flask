@@ -137,8 +137,8 @@ def borrow_to_dict(borrow: Borrow):
         'user_name': borrow.user_name,
         'book_id': borrow.book_id,
         'book_name': borrow.book_name,
-        'borrow_date': borrow.borrow_date,
-        'expired_date': borrow.expired_date,
+        'borrow_date': borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else None,
+        'expired_date': borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else None,
         'is_return': borrow.is_return,
         'is_agree': borrow.is_agree
     }
@@ -151,7 +151,7 @@ def comment_to_dict(comment: Comment):
         'user_name': comment.user_name,
         'book_id': comment.book_id,
         'content': comment.content,
-        'comment_date': comment.comment_date
+        'comment_date': comment.comment_date.strftime('%Y-%m-%d') if comment.comment_date else None
     }
 
 
@@ -185,7 +185,7 @@ def announcement_to_dict(announcement: Announcement):
         'id': announcement.id,
         'title': announcement.title,
         'content': announcement.content,
-        'publish_time': announcement.publish_time
+        'publish_time': announcement.publish_time.strftime('%Y-%m-%d %H:%M:%S') if announcement.publish_time else None
     }
 
 
@@ -196,5 +196,5 @@ def consult_to_dict(consult: Consult):
         'user_name': consult.user_name,
         'title': consult.title,
         'content': consult.content,
-        'consult_time': consult.consult_time
+        'consult_time': consult.consult_time.strftime('%Y-%m-%d %H:%M:%S') if consult.consult_time else None
     }
