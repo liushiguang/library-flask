@@ -36,7 +36,7 @@ def add_book():
     db.session.commit()
 
     # 响应消息
-    msg = f"添加图书{new_book.book_name}成功！"
+    msg = f"添加图书《{new_book.book_name}》成功！"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.ADD_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
@@ -52,7 +52,7 @@ def delete_book(id):
     db.session.commit()
 
     # 响应消息
-    msg = f"删除图书{book.book_name}成功！"
+    msg = f"删除图书《{book.book_name}》成功！"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.DELETE_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
@@ -78,7 +78,7 @@ def update_book(id):
     db.session.commit()
 
     # 响应消息
-    msg = f"修改图书{book.book_name}成功！"
+    msg = f"修改图书《{book.book_name}》成功！"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.UPDATE_BOOK_SUCCESS.value, data=None, msg=msg).__dict__)
@@ -107,7 +107,7 @@ def get_book(id):
     # 将Book对象转换成字典格式
     json_book = book_to_dict(book)
     # 响应消息
-    msg = f"查询图书{book.book_name}成功！"
+    msg = f"查询图书《{book.book_name}》成功！"
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BOOK_SUCCESS.value, data=json_book, msg=msg).__dict__)
@@ -267,48 +267,47 @@ def delete_borrows(id):
 # 还特定书籍与同意借阅特定书籍
 @app.route('/borrows/<int:id>', methods=['PUT'])
 def update_borrow(id):
-    try:
-        # 查询是否存在对应的借阅记录
-        borrow = Borrow.query.get(id)
-        if not borrow:
-            return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='未发现记录').__dict__)
+    # 查询是否存在对应的借阅记录
+    borrow = Borrow.query.get(id)
+    if not borrow:
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='未发现记录').__dict__)
 
-        # WARNING 你这样写代码把我的路全部堵死了
-        # 将对应的借阅记录的 is_return 字段设置为 1
-        # borrow.is_return = 1
-        # db.session.commit()
+    # WARNING 你这样写代码把我的路全部堵死了
+    # 将对应的借阅记录的 is_return 字段设置为 1
+    # borrow.is_return = 1
+    # db.session.commit()
 
-        # 接受前端传来的json格式的数据
-        data = request.get_json(force=True)
+    # 接受前端传来的json格式的数据
+    data = request.get_json(force=True)
 
-        for key, value in data.items():
-            # 如果这个属性存在并且值不相等，就修改这个属性的值
-            if hasattr(borrow, key) and getattr(borrow, key) != value:
-                setattr(borrow, key, value)
+    # 响应消息
+    msg = ""
 
-        # 提交到数据库
-        db.session.commit()
+    print(borrow.is_agree, data["is_agree"], borrow.is_return, data["is_return"])
+    # 判断是处理借阅申请还是归还申请
+    if borrow.is_agree != data["is_agree"]:
+        if data["is_agree"] == 1:
+            msg = f"通过了用户{borrow.user_name}在{borrow.borrow_date}借阅图书《{borrow.book_name}》的申请"
+        # 拒绝借阅
+        if data["is_agree"] == -1:
+            msg = f"拒绝了用户{borrow.user_name}在{borrow.borrow_date}借阅图书《{borrow.book_name}》的申请"
 
-        # 响应消息
-        msg = ""
-        # 判断是处理借阅申请还是归还申请
-        if borrow.is_agree != data.is_agree:
-            if borrow.is_agree == 1:
-                msg = f"通过了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
-            # 拒绝借阅
-            if borrow.is_agree == -1:
-                msg = f"拒绝了用户{borrow.user_name}在{borrow.borrow_date}借阅图书{borrow.book_name}的申请"
+    elif borrow.is_return != data["is_return"]:
+        if data["is_return"] == 1:
+            msg = f"用户{borrow.user_name}在{borrow.borrow_date}归还了图书《{borrow.book_name}》"
 
-        elif borrow.is_return != data.is_return:
-            if data.is_return == 1:
-                msg = f"用户{borrow.user_name}在{borrow.borrow_date}归还了图书{borrow.book_name}"
+    for key, value in data.items():
+        # 如果这个属性存在并且值不相等，就修改这个属性的值
+        if hasattr(borrow, key) and getattr(borrow, key) != value:
+            setattr(borrow, key, value)
 
-        # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
-        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
+    # 提交到数据库
+    db.session.commit()
 
+    print(msg)
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
 
-    except Exception as e:
-        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='error').__dict__)
 
 # 查 GET
 @app.route('/borrows', methods=['GET'])
