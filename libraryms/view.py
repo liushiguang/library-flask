@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 from libraryms import app, db
 from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, UBorrow, Announcement, Consult
-from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict, announcement_to_dict, consult_to_dict
+from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict, announcement_to_dict, \
+    consult_to_dict
 import json
 
 # TODO 处理异常操作
@@ -229,6 +230,8 @@ def get_user(id):
         GET /borrows
             /borrows/id
 '''
+
+
 # 增 POST
 @app.route('/borrows', methods=['POST'])
 def add_borrow():
@@ -245,6 +248,7 @@ def add_borrow():
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.ADD_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
+
 
 # 取消某个借书申请
 @app.route('/borrows/<int:id>', methods=['DELETE'])
@@ -263,6 +267,7 @@ def delete_borrows(id):
     except Exception as e:
         return jsonify(
             APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
 
 # 还特定书籍与同意借阅特定书籍
 @app.route('/borrows/<int:id>', methods=['PUT'])
@@ -326,36 +331,6 @@ def get_all_borrows():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
 
-# 查个人借阅信息
-# @app.route('/borrows/<int:user_id>', methods=['GET'])
-# def get_borrows(user_id):
-#     # 查询用户借阅信息
-#     borrows = Borrow.query.filter_by(user_id=user_id).filter(
-#         (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
-#     # 封装数据
-#     borrow_data = []
-#     for borrow in borrows:
-#         # 查询书籍信息
-#         book = Book.query.filter_by(book_id=borrow.book_id).first()
-#         print(book)
-#         if not book:
-#             continue  # 如果书籍不存在，则跳过当前借阅信息
-#         # 格式化日期
-#         borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
-#         expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
-#         # 封装数据
-#         borrow_info = {
-#             'id': borrow.id,
-#             'book_id': borrow.book_id,
-#             'cover': book.cover,
-#             'book_name': borrow.book_name,
-#             'borrow_date': borrow_date,
-#             'expired_date': expired_date,
-#             'is_agree': borrow.is_agree
-#         }
-#         borrow_data.append(borrow_info)
-#
-#     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
 
 @app.route('/borrows/<int:id>', methods=['GET'])
 def get_borrow(id):
@@ -386,6 +361,8 @@ def get_borrow(id):
         GET /announcements
             /announcements/id
 '''
+
+
 # 增 POST
 @app.route('/announcements', methods=['POST'])
 def add_announcement():
@@ -501,6 +478,70 @@ def login_by_account():
         return jsonify(APIResponse(ResposeCode.GET_USER_ERR.value, data='', msg='error').__dict__)
 
 
+# 查个人借阅信息
+@app.route('/borrowsForUser/<int:user_id>', methods=['GET'])
+def get_borrows_user(user_id):
+    # 查询用户借阅信息
+    borrows = Borrow.query.filter_by(user_id=user_id).filter(
+        (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
+    # 封装数据
+    borrow_data = []
+    for borrow in borrows:
+        # 查询书籍信息
+        book = Book.query.filter_by(book_id=borrow.book_id).first()
+        print(book)
+        if not book:
+            continue  # 如果书籍不存在，则跳过当前借阅信息
+        # 格式化日期
+        borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
+        expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
+        # 封装数据
+        borrow_info = {
+            'id': borrow.id,
+            'book_id': borrow.book_id,
+            'cover': book.cover,
+            'book_name': borrow.book_name,
+            'borrow_date': borrow_date,
+            'expired_date': expired_date,
+            'is_agree': borrow.is_agree
+        }
+        borrow_data.append(borrow_info)
+
+    return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
+
+
+# 还书
+@app.route('/borrowsForUser/<int:id>', methods=['PUT'])
+def return_borrows_user(id):
+    # 查询 Borrow 表格，找到符合条件的第一个记录
+    borrow_to_return = Borrow.query.filter_by(id=id, is_agree=1, is_return=0).first()
+
+    if borrow_to_return:
+        # 更新符合条件的记录的 is_return 字段为 1
+        borrow_to_return.is_return = 1
+        # 提交事务
+        db.session.commit()
+
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='success').__dict__)
+    else:
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+
+# 取消借阅申请
+@app.route('/borrowsForUser/<int:id>', methods=['DELETE'])
+def delete_borrows_user(id):
+    # 查询要删除的 Borrow 记录
+    borrow_to_delete = Borrow.query.get(id)
+
+    if borrow_to_delete:
+        db.session.delete(borrow_to_delete)
+        db.session.commit()
+
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_SUCCESS.value, data="", msg='success').__dict__)
+    else:
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+
 # 查个人的消息（别人请求借自己图书城的书）
 @app.route('/asks/<int:user_id>', methods=['GET'])
 def get_asks(user_id):
@@ -544,6 +585,7 @@ def refuse_asks(id):
     borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
     return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
+
 
 # 查借书记录
 @app.route('/borrowsHistory/<int:user_id>', methods=['GET'])
@@ -790,6 +832,7 @@ def post_consults():
         return jsonify(APIResponse(ResposeCode.ADD_CONSULT_SUCCESS.value, data="", msg='success').__dict__)
     except Exception as e:
         return jsonify(APIResponse(ResposeCode.ADD_CONSULT_ERR.value, data="", msg='error').__dict__)
+
 
 # ——————————————————————————————————————————————————————————————————
 
