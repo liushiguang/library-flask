@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 from libraryms import app, db
-from libraryms.models import Administrator, Book, Borrow, Comment, U_Library, User, U_Borrow, Announcement, Consult
+from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, UBorrow, Announcement, Consult
 from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict
 import json
 
@@ -370,7 +370,7 @@ def login_by_account():
 @app.route('/asks/<int:user_id>', methods=['GET'])
 def get_asks(user_id):
     # 查询所有is_agree=0且borrower_id为指定用户ID的借书请求
-    asks = U_Borrow.query.filter_by(is_agree=0, lender_id=user_id).all()
+    asks = UBorrow.query.filter_by(is_agree=0, lender_id=user_id).all()
     if asks:
         ask_list = []
         for ask in asks:
@@ -396,7 +396,7 @@ def get_asks(user_id):
 # 同意他人借阅自己的图书
 @app.route('/asksAgree/<int:id>', methods=['POST'])
 def agree_asks(id):
-    borrow_request = U_Borrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
+    borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
     borrow_request.is_agree = 1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
     return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
@@ -405,7 +405,7 @@ def agree_asks(id):
 # 拒绝
 @app.route('/asksRefuse/<int:id>', methods=['POST'])
 def refuse_asks(id):
-    borrow_request = U_Borrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
+    borrow_request = UBorrow.query.get_or_404(id)  # 获取特定 ID 的借书请求记录
     borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
     return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
@@ -501,12 +501,12 @@ def delete_borrows_history(id):
 def get_my_resources(user_id):
     try:
         # 查询属于个人图书馆的图书
-        personal_books = U_Library.query.filter_by(user_id=user_id).all()
+        personal_books = ULibrary.query.filter_by(user_id=user_id).all()
         # 封装数据
         books_data = []
         for book in personal_books:
             # 查询该图书的所有借阅记录
-            borrow_records = U_Borrow.query.filter_by(book_id=book.id).all()
+            borrow_records = UBorrow.query.filter_by(book_id=book.id).all()
             # 判断是否有符合条件的借阅记录
             status = 0
             for record in borrow_records:
@@ -516,7 +516,7 @@ def get_my_resources(user_id):
             # 封装数据
             book_info = {
                 'book_id': book.id,
-                'bookName': book.book_name,
+                'book_name': book.book_name,
                 'author': book.author,
                 'category': book.category,
                 'press': book.press,
@@ -534,11 +534,18 @@ def get_my_resources(user_id):
 def delete_my_resources(id):
     try:
         # 查询要删除的图书
-        book_to_delete = U_Library.query.get(id)
+        book_to_delete = ULibrary.query.get(id)
         # 如果图书不存在，返回404
         if not book_to_delete:
             return jsonify(APIResponse(ResposeCode.DELETE_UBorrow_ERR.value, data="", msg='未发现书籍！').__dict__)
 
+        # 查询UBorrow表中对应book_id且is_agree为0的记录
+        u_borrow_records = UBorrow.query.filter_by(book_id=id, is_agree=0).all()
+        # 将这些记录的状态置为-1,即为拒绝
+        for record in u_borrow_records:
+            record.is_return = -1
+
+        db.session.commit()
         # 删除图书
         db.session.delete(book_to_delete)
         db.session.commit()
@@ -553,26 +560,28 @@ def delete_my_resources(id):
 def get_other_resource(borrower_id):
     try:
         # 查询符合条件的借书信息,未审查的或者是未归还的
-        borrow_info = U_Borrow.query.filter(
-            U_Borrow.borrower_id == borrower_id,
-            (U_Borrow.is_agree == 0) | ((U_Borrow.is_agree == 1) & (U_Borrow.is_return == 0))
+        borrow_info = UBorrow.query.filter(
+            UBorrow.borrower_id == borrower_id,
+            (UBorrow.is_agree == 0) | ((UBorrow.is_agree == 1) & (UBorrow.is_return == 0))
         ).with_entities(
-            U_Borrow.id,
-            U_Borrow.book_id,
-            U_Borrow.book_name,
-            U_Borrow.borrow_date,
-            U_Borrow.is_agree
+            UBorrow.id,
+            UBorrow.book_id,
+            UBorrow.book_name,
+            UBorrow.borrow_date,
+            UBorrow.is_agree,
+            UBorrow.lender_id
         ).all()
-
         # 封装数据
         borrow_data = []
         for borrow in borrow_info:
+            lender_name = User.query.filter_by(user_id=borrow.lender_id).first().user_name
             borrow_info = {
                 'id': borrow.id,
                 'book_id': borrow.book_id,
                 'book_name': borrow.book_name,
-                'borrow_date': borrow.borrow_date,
-                'is_agree': borrow.is_agree
+                'borrow_date': borrow.borrow_date.strftime('%Y-%m-%d'),
+                'is_agree': borrow.is_agree,
+                'lender_name': lender_name
             }
             borrow_data.append(borrow_info)
 
@@ -586,7 +595,7 @@ def get_other_resource(borrower_id):
 def update_other_resources(id):
     try:
         # 查询指定ID的借书记录
-        borrow_record = U_Borrow.query.get(id)
+        borrow_record = UBorrow.query.get(id)
         if borrow_record:
             # 将借书记录的is_return字段置为1
             borrow_record.is_return = 1
@@ -603,7 +612,7 @@ def update_other_resources(id):
 def delete_other_resources(id):
     try:
         # 查询指定ID的借书记录，需要是is_agree=0还未通过的
-        borrow_record = U_Borrow.query.filter_by(id=id, is_agree=0).first()
+        borrow_record = UBorrow.query.filter_by(id=id, is_agree=0).first()
 
         if borrow_record:
             db.session.delete(borrow_record)  # 取消申请
@@ -622,7 +631,7 @@ def post_my_resources():
         # 从请求中获取书籍信息数据
         data = request.get_json()
 
-        new_book = U_Library(
+        new_book = ULibrary(
             user_id=data['user_id'],
             book_name=data['book_name'],
             author=data['author'],
@@ -651,7 +660,7 @@ def get_announcements():
                 'id': announcement.id,
                 'title': announcement.title,
                 'content': announcement.content,
-                'publish_time': announcement.publish_time
+                'publish_time': announcement.publish_time.strftime('%Y-%m-%d'),
             }
             announcement_data.append(announcement_info)
 
@@ -674,14 +683,14 @@ def post_consults():
             user_name=data['user_name'],
             title=data['title'],
             content=data['content'],
-            consult_date=datetime.now()  # 记录当前时间
+            consult_time=datetime.now()  # 记录当前时间
         )
         db.session.add(new_consult)
         db.session.commit()
 
-        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_ERR.value, data="", msg='success').__dict__)
+        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_SUCCESS.value, data="", msg='success').__dict__)
     except Exception as e:
-        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_SUCCESS.value, data="", msg='error').__dict__)
+        return jsonify(APIResponse(ResposeCode.ADD_CONSULT_ERR.value, data="", msg='error').__dict__)
 
 # ——————————————————————————————————————————————————————————————————
 

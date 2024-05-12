@@ -1,5 +1,5 @@
 from enum import Enum
-from libraryms.models import Administrator, Book, Borrow, Comment, U_Library, User, Announcement, Consult, U_Borrow
+from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, Announcement, Consult, UBorrow
 # 定义返回数据的规范类
 class APIResponse:
     def __init__(self, code, data=None, msg=None):
@@ -155,7 +155,7 @@ def comment_to_dict(comment: Comment):
     }
 
 
-def u_library_to_dict(u_library: U_Library):
+def u_library_to_dict(u_library: ULibrary):
     return {
         'id': u_library.id,
         'user_id': u_library.user_id,
@@ -167,7 +167,7 @@ def u_library_to_dict(u_library: U_Library):
     }
 
 
-def u_borrow_to_dict(u_borrow: U_Borrow):
+def u_borrow_to_dict(u_borrow: UBorrow):
     return {
         'id': u_borrow.id,
         'borrow_id': u_borrow.borrower_id,

@@ -38,7 +38,7 @@ class Comment(db.Model):
     comment_date = db.Column(db.Date)
 
 
-class U_Library(db.Model):
+class ULibrary(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     user_id = db.Column(db.Integer)
     book_name = db.Column(db.String(50))
@@ -48,7 +48,7 @@ class U_Library(db.Model):
     introduction = db.Column(db.Text)
 
 
-class U_Borrow(db.Model):
+class UBorrow(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     borrower_id = db.Column(db.Integer)
     lender_id = db.Column(db.Integer)
