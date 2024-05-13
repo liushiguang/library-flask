@@ -18,7 +18,9 @@ class ResposeCode(Enum):
             5 代表U_Borrow表
             6 代表Borrow表
             7 代表Consult表
-            8 代表Administrator表
+            8 代表Comment表
+            9 代表TTS
+            10 代表Administrator表
             ...(待补充)
         第五位代表操作的类型
             1 代表增
@@ -104,17 +106,43 @@ class ResposeCode(Enum):
     UPDATE_CONSULT_ERR = 40073
     GET_CONSULT_ERR = 40074
 
+    # Comment 表状态码
+    ADD_COMMENT_SUCCESS = 20081
+    DELETE_COMMENT_SUCCESS = 20082
+    UPDATE_COMMENT_SUCCESS = 20083
+    GET_COMMENT_SUCCESS = 20084
+
+    ADD_COMMENT_ERR = 40081
+    DELETE_COMMENT_ERR = 40082
+    UPDATE_COMMENT_ERR = 40083
+    GET_COMMENT_ERR = 40084
+
+    # Chat状态码
+    GET_CHAT_RESPONSE_SUCCESS = 20094
+    GET_CHAT_RESPONSE_ERR = 40094
+
+    # TTS状态码
+    ADD_TTS_SUCCESS = 200101
+    GET_TTS_SUCCESS = 200104
+
+    ADD_TTS_ERR = 400101
+    GET_TTS_ERR = 400104
+
     # Administrator表状态码
-    ADD_ADMINISTRATOR_SUCCESS = 20081
-    DELETE_ADMINISTRATOR_SUCCESS = 20082
-    UPDATE_ADMINISTRATOR_SUCCESS = 20083
-    GET_ADMINISTRATOR_SUCCESS = 20084
+    ADD_ADMINISTRATOR_SUCCESS = 200101
+    DELETE_ADMINISTRATOR_SUCCESS = 200102
+    UPDATE_ADMINISTRATOR_SUCCESS = 200103
+    GET_ADMINISTRATOR_SUCCESS = 200104
 
-    ADD_ADMINISTRATOR_ERR = 40081
-    DELETE_ADMINISTRATOR_ERR = 40082
-    UPDATE_ADMINISTRATOR_ERR = 40083
-    GET_ADMINISTRATOR_ERR = 40084
+    ADD_ADMINISTRATOR_ERR = 400101
+    DELETE_ADMINISTRATOR_ERR = 400102
+    UPDATE_ADMINISTRATOR_ERR = 400103
+    GET_ADMINISTRATOR_ERR = 400104
 
+
+class AccessKey(Enum):
+    API_KEY = "MD8Yqq2yYA0ox52Hu8WvpWPY"
+    SECRET_KEY = "12QK4F9C6TKtwT0diqKQkylcBnypNcsZ"
 
 def book_to_dict(book: Book):
     return {
@@ -129,6 +157,7 @@ def book_to_dict(book: Book):
             'cover': book.cover
         }
 
+
 def user_to_dict(user: User):
     return {
         'user_id': user.user_id,
@@ -138,7 +167,19 @@ def user_to_dict(user: User):
         'gender': user.gender,
         'phone': user.phone,
         'email': user.email,
-        'profile': user.profile
+        'profile': user.profile,
+        'cover': user.cover
+    }
+
+
+def comment_to_dict(comment: Comment):
+    return {
+        'comment_id': comment.id,
+        'user_id': comment.user_id,
+        'user_name': comment.user_name,
+        'book_id': comment.book_id,
+        'content': comment.content,
+        'comment_date': comment.comment_date
     }
 
 

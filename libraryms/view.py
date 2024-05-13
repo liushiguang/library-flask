@@ -1,9 +1,32 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 from libraryms import app, db
+from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, TTS_Info
+from libraryms.tts_util.tts_info import tts_info
+from libraryms.tts_util.util_for_tts import Ws_Param, on_open, on_message, on_error, on_close, pcm_to_wav
+from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, comment_to_dict, AccessKey, \
+    u_library_to_dict, announcement_to_dict
 from libraryms.models import Administrator, Book, Borrow, Comment, ULibrary, User, UBorrow, Announcement, Consult
-from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict, announcement_to_dict, consult_to_dict
+from libraryms.util import APIResponse, ResposeCode, book_to_dict, user_to_dict, borrow_to_dict
 import json
+import requests
+from flask import send_file
+import websocket
+import datetime
+import hashlib
+import base64
+import hmac
+import json
+from urllib.parse import urlencode
+import time
+import ssl
+from wsgiref.handlers import format_date_time
+from datetime import datetime
+from time import mktime
+import _thread as thread
+import os
+import wave
+# from  tts_util.util_for_tts import on_open, Ws_Param, on_message, on_error, on_close, pcm_to_wav
 
 # TODO 处理异常操作
 # @app.errorhandler(404, 500, )
@@ -113,6 +136,16 @@ def get_book(id):
     return jsonify(APIResponse(ResposeCode.GET_BOOK_SUCCESS.value, data=json_book, msg=msg).__dict__)
 
 
+# 通过类别查询图书
+@app.route('/books/category/<string:category>', methods=['GET'])
+def get_book_by_category(category):
+    # （get通过主键查询）这里根据属性值查询
+    books = Book.query.filter_by(category=category).all()
+    json_book = [book_to_dict(book) for book in books]
+    msg = f"查询图书种类成功！"
+    return jsonify(APIResponse(ResposeCode.GET_BOOK_SUCCESS.value, data=json_book, msg=msg).__dict__)
+
+
 '''
     User 模块
     增:
@@ -218,6 +251,170 @@ def get_user(id):
 
 
 '''
+    Comment 模块
+    增:
+        POST /comments
+    删:
+        DELETE /comments/id
+    改:
+        PUT /comments/id
+    查:
+        GET /comments/book_id
+'''
+
+
+@app.route('/comments', methods=['POST'])
+def add_comment():
+    data = request.get_json(force=True)
+    new_comment = Comment(**data)
+    db.session.add(new_comment)
+    db.session.commit()
+    msg = f"发布评论{new_comment.comment_id}成功"
+
+    return jsonify(APIResponse(ResposeCode.ADD_COMMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+@app.route('/comments/<int:id>', methods=['DELETE'])
+def delete_comment(id):
+    # 通过id找到对应的Comment对象
+    comment = Comment.query.get(id)
+    # 删除这个对象,并提交到数据库
+    db.session.delete(comment)
+    db.session.commit()
+
+    # 响应消息
+    msg = f"删除评论{comment.id}成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.DELETE_COMMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+@app.route('/comments/<int:id>', methods=['PUT'])
+def update_comment(id):
+    # 通过id找到对应的Comment对象
+    comment = Comment.query.get(id)
+
+    # 接受前端传来的json格式的数据
+    data = request.get_json(force=True)
+
+    for key, value in data.items():
+        # 如果这个属性存在并且值不相等，就修改这个属性的值
+        if hasattr(comment, key) and getattr(comment, key) != value:
+            setattr(comment, key, value)
+
+    # 提交到数据库
+    db.session.commit()
+
+    # 响应消息
+    msg = f"修改图书{comment.id}成功！"
+
+    # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
+    return jsonify(APIResponse(ResposeCode.UPDATE_COMMENT_SUCCESS.value, data=None, msg=msg).__dict__)
+
+
+@app.route('/comments/<int:book_id>', methods=['GET'])
+def get_all_comments_by_book_id(book_id):
+    comments = Comment.query.filter_by(book_id=book_id).all()
+    json_comments = [comment_to_dict(comment) for comment in comments]
+    msg = "获取所有评论成功！"
+    return jsonify(APIResponse(ResposeCode.GET_COMMENT_SUCCESS.value, data=json_comments, msg=msg).__dict__)
+
+
+'''
+    附加CommentInfo 模块
+    这里使用的code和comment一样
+    查:
+        GET /commentInfo/book_id
+'''
+
+
+@app.route('/commentInfo/<int:book_id>', methods=['GET'])
+def get_all_comment_info_by_book_id(book_id):
+    comments = Comment.query.filter_by(book_id=book_id).all()
+    json_comments = [comment_to_dict(comment) for comment in comments]
+    # 获取用户姓名，评论内容、时间列表和user_id
+    user_names = [comment['user_name'] for comment in json_comments]
+    contents = [comment['content'] for comment in json_comments]
+    times = [comment['comment_date'] for comment in json_comments]
+    comment_users = [comment['user_id'] for comment in json_comments]
+    # 用户头像列表
+    comment_user_covers = []
+    for user_id in comment_users:
+        user = User.query.get(user_id)
+        json_user = user_to_dict(user)
+        print(json_user)
+        comment_user_covers.append(json_user['cover'])
+
+    # 所有列表合并起来并转化为json格式
+    merged_data = [
+        {'user_cover': comment_user_cover, 'user_name': user_name, 'content': content, 'comment_date': str(time)} for
+        comment_user_cover, user_name, content, time
+        in zip(comment_user_covers, user_names, contents, times)]
+
+    # json_data = json.dumps(merged_data)
+
+    msg = "获取所有评论成功！"
+
+    # 注意，这里返回的就是dict字典数据，这样在前端可以直接使用data.map作为数组遍历获取数据
+    # 不要转为json格式
+    print(merged_data)
+
+    return jsonify(APIResponse(ResposeCode.GET_COMMENT_SUCCESS.value, data=merged_data, msg=msg).__dict__)
+
+'''
+    大模型ERNIE-4.0-8K-Preview调用
+'''
+
+
+def get_access_token():
+    """
+    使用 API Key，Secret Key 获取access_token，替换下列示例中的应用API Key、应用Secret Key
+    """
+    url = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=MD8Yqq2yYA0ox52Hu8WvpWPY&client_secret=12QK4F9C6TKtwT0diqKQkylcBnypNcsZ"
+    # grant_type = "client_credentials"
+    # base_url = "https://aip.baidubce.com/oauth/2.0/token"
+    #
+    # url = f"{base_url}?grant_type={grant_type}&client_id={AccessKey.API_KEY}&client_secret={AccessKey.SECRET_KEY}"
+
+    payload = json.dumps("")
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.json().get("access_token")
+
+
+@app.route('/chat/<string:ask_content>', methods=['GET'])
+def get_chat_response(ask_content):
+    url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.0-8k-preview?access_token=" + get_access_token()
+
+    payload = json.dumps({
+        "messages": [
+            {
+                "role": "user",
+                "content": ask_content
+            }
+        ]
+    })
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    # 将响应体内容转化为字典
+    chat_data = response.json()
+    # 打印回复内容
+    chat_data = [chat_data]
+    print(chat_data)
+    msg = "获取回复成功"
+    return jsonify(APIResponse(ResposeCode.GET_CHAT_RESPONSE_SUCCESS.value, data=chat_data, msg=msg).__dict__)
+
+
+
+'''
     Borrow 模块
     增:
         POST /borrows
@@ -229,6 +426,8 @@ def get_user(id):
         GET /borrows
             /borrows/id
 '''
+
+
 # 增 POST
 @app.route('/borrows', methods=['POST'])
 def add_borrow():
@@ -245,6 +444,7 @@ def add_borrow():
 
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.ADD_BORROW_SUCCESS.value, data=None, msg=msg).__dict__)
+
 
 # 取消某个借书申请
 @app.route('/borrows/<int:id>', methods=['DELETE'])
@@ -263,6 +463,7 @@ def delete_borrows(id):
     except Exception as e:
         return jsonify(
             APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
 
 # 还特定书籍与同意借阅特定书籍
 @app.route('/borrows/<int:id>', methods=['PUT'])
@@ -326,36 +527,6 @@ def get_all_borrows():
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
 
-# 查个人借阅信息
-# @app.route('/borrows/<int:user_id>', methods=['GET'])
-# def get_borrows(user_id):
-#     # 查询用户借阅信息
-#     borrows = Borrow.query.filter_by(user_id=user_id).filter(
-#         (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
-#     # 封装数据
-#     borrow_data = []
-#     for borrow in borrows:
-#         # 查询书籍信息
-#         book = Book.query.filter_by(book_id=borrow.book_id).first()
-#         print(book)
-#         if not book:
-#             continue  # 如果书籍不存在，则跳过当前借阅信息
-#         # 格式化日期
-#         borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
-#         expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
-#         # 封装数据
-#         borrow_info = {
-#             'id': borrow.id,
-#             'book_id': borrow.book_id,
-#             'cover': book.cover,
-#             'book_name': borrow.book_name,
-#             'borrow_date': borrow_date,
-#             'expired_date': expired_date,
-#             'is_agree': borrow.is_agree
-#         }
-#         borrow_data.append(borrow_info)
-#
-#     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
 
 @app.route('/borrows/<int:id>', methods=['GET'])
 def get_borrow(id):
@@ -374,6 +545,15 @@ def get_borrow(id):
     return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrow, msg=msg).__dict__)
 
 
+# 获取指定用户借阅的书籍
+@app.route('/userBorrow/<int:user_id>', methods=['GET'])
+def get_user_borrow(user_id):
+    borrows = Borrow.query.filter_by(user_id).all()
+    json_borrows = [borrow_to_dict(borrow) for borrow in borrows]
+    msg = f"查询用户借阅书籍成功"
+    return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=json_borrows, msg=msg).__dict__)
+
+
 '''
     Announcement 模块
     增:
@@ -386,6 +566,8 @@ def get_borrow(id):
         GET /announcements
             /announcements/id
 '''
+
+
 # 增 POST
 @app.route('/announcements', methods=['POST'])
 def add_announcement():
@@ -533,6 +715,70 @@ def login_by_account():
         return jsonify(APIResponse(ResposeCode.GET_USER_ERR.value, data='', msg='error').__dict__)
 
 
+# 查个人借阅信息
+@app.route('/borrowsForUser/<int:user_id>', methods=['GET'])
+def get_borrows_user(user_id):
+    # 查询用户借阅信息
+    borrows = Borrow.query.filter_by(user_id=user_id).filter(
+        (Borrow.is_agree == 0) | ((Borrow.is_agree == 1) & (Borrow.is_return == 0))).all()
+    # 封装数据
+    borrow_data = []
+    for borrow in borrows:
+        # 查询书籍信息
+        book = Book.query.filter_by(book_id=borrow.book_id).first()
+        print(book)
+        if not book:
+            continue  # 如果书籍不存在，则跳过当前借阅信息
+        # 格式化日期
+        borrow_date = borrow.borrow_date.strftime('%Y-%m-%d') if borrow.borrow_date else ""
+        expired_date = borrow.expired_date.strftime('%Y-%m-%d') if borrow.expired_date else ""
+        # 封装数据
+        borrow_info = {
+            'id': borrow.id,
+            'book_id': borrow.book_id,
+            'cover': book.cover,
+            'book_name': borrow.book_name,
+            'borrow_date': borrow_date,
+            'expired_date': expired_date,
+            'is_agree': borrow.is_agree
+        }
+        borrow_data.append(borrow_info)
+
+    return jsonify(APIResponse(ResposeCode.GET_BORROW_SUCCESS.value, data=borrow_data, msg='success').__dict__)
+
+
+# 还书
+@app.route('/borrowsForUser/<int:id>', methods=['PUT'])
+def return_borrows_user(id):
+    # 查询 Borrow 表格，找到符合条件的第一个记录
+    borrow_to_return = Borrow.query.filter_by(id=id, is_agree=1, is_return=0).first()
+
+    if borrow_to_return:
+        # 更新符合条件的记录的 is_return 字段为 1
+        borrow_to_return.is_return = 1
+        # 提交事务
+        db.session.commit()
+
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_SUCCESS.value, data="", msg='success').__dict__)
+    else:
+        return jsonify(APIResponse(ResposeCode.UPDATE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+
+# 取消借阅申请
+@app.route('/borrowsForUser/<int:id>', methods=['DELETE'])
+def delete_borrows_user(id):
+    # 查询要删除的 Borrow 记录
+    borrow_to_delete = Borrow.query.get(id)
+
+    if borrow_to_delete:
+        db.session.delete(borrow_to_delete)
+        db.session.commit()
+
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_SUCCESS.value, data="", msg='success').__dict__)
+    else:
+        return jsonify(APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+
 # 查个人的消息（别人请求借自己图书城的书）
 @app.route('/asks/<int:user_id>', methods=['GET'])
 def get_asks(user_id):
@@ -576,6 +822,7 @@ def refuse_asks(id):
     borrow_request.is_agree = -1  # 将 is_agree 设置为 1，表示已同意
     db.session.commit()  # 提交更改到数据库
     return jsonify(APIResponse(ResposeCode.UPDATE_UBorrow_SUCCESS.value, data='', msg='success').__dict__)
+
 
 # 查借书记录
 @app.route('/borrowsHistory/<int:user_id>', methods=['GET'])
@@ -625,6 +872,15 @@ def delete_borrows_history(id):
     except Exception as e:
         return jsonify(
             APIResponse(ResposeCode.DELETE_BORROW_ERR.value, data="", msg='error').__dict__)
+
+
+# 获取所有个人图书馆资源
+@app.route('/myResources', methods=['GET'])
+def get_all_resources():
+    personal_books = ULibrary.query.all()
+    json_personal_books = [u_library_to_dict(book) for book in personal_books]
+    msg = f"查询所有个人图书馆资源成功！"
+    return jsonify(APIResponse(ResposeCode.GET_ULibrary_SUCCESS.value, data=json_personal_books, msg=msg).__dict__)
 
 
 # 个人图书馆资源查询
@@ -823,7 +1079,58 @@ def post_consults():
     except Exception as e:
         return jsonify(APIResponse(ResposeCode.ADD_CONSULT_ERR.value, data="", msg='error').__dict__)
 
+
 # ——————————————————————————————————————————————————————————————————
+
+
+@app.route('/uBorrow', methods=['POST'])
+def add_u_borrow():
+    data = request.get_json(force=True)
+    new_u_borrow = UBorrow(**data)
+    db.session.add(new_u_borrow)
+    db.session.commit()
+    msg = f"用户{new_u_borrow.borrower_id}向{new_u_borrow.lender_id}在{new_u_borrow.borrow_date}申请借阅了{new_u_borrow.book_name}"
+    return jsonify(APIResponse(ResposeCode.ADD_UBorrow_SUCCESS.value, data=data, msg=msg).__dict__)
+
+
+# 返回保存在服务器上面的音频文件url
+@app.route('/audio/wav/<filename>')
+def get_audio(filename):
+    # 确定保存文件的目录
+    save_dir = 'tts_audio/wav'
+    # 返回保存在服务器上的音频文件
+    return send_file(os.path.join(save_dir, filename), as_attachment=True)
+
+
+
+# tts文字转语音请求
+@app.route('/audio', methods=["POST"])
+def handle_tts():
+    data = request.get_json(force=True)
+    tts_data = TTS_Info(**data)
+    book_name = tts_data.book_name
+    wsParam = Ws_Param(APPID='3d152a69', APISecret='MWRjM2M5ODY4ZWNmYTIzYjI0MWYyMzQ0',
+                       APIKey='287a5996f08773bfdc57ef33d55de798',
+                       Text=tts_data.text)
+    websocket.enableTrace(False)
+    wsUrl = wsParam.create_url()
+    ws = websocket.WebSocketApp(wsUrl, on_message=lambda ws, message: on_message(ws, message, book_name), on_error=on_error, on_close=on_close)
+    ws.on_open = lambda ws: on_open(ws, wsParam, book_name)  # 在这里调用 on_open 函数
+    ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+    # 输出路径
+    current_pcm_directory = './tts_audio/pcm'
+    current_wav_directory = './tts_audio/wav'
+    filename = tts_data.book_name
+    pcm_extension = '.pcm'
+    wav_extension = '.wav'
+    input_pcm_file = os.path.join(current_pcm_directory, filename + pcm_extension)
+    output_wav_file = os.path.join(current_wav_directory, filename + wav_extension)
+
+    # 转换为wav文件
+    pcm_to_wav(input_pcm_file=input_pcm_file, output_wav_file=output_wav_file)
+    msg = f"转换成功"
+    return jsonify(APIResponse(ResposeCode.ADD_TTS_SUCCESS.value, data=None, msg=msg).__dict__)
+
 
 if __name__ == '__main__':
     app.run()
