@@ -3,6 +3,7 @@ from libraryms import db
 class Administrator(db.Model):
     admin_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     admin_name = db.Column(db.String(50))
+    admin_account = db.Column(db.String(20))
     admin_password = db.Column(db.String(255))
     gender = db.Column(db.String(2))
     phone = db.Column(db.String(11))

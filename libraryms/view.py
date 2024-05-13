@@ -472,6 +472,38 @@ def get_announcement(id):
     # 将返回结果封装成APIResponse对象，然后转换成json格式返回给前端
     return jsonify(APIResponse(ResposeCode.GET_ANNOUNCEMENT_SUCCESS.value, data=json_announcement, msg=msg).__dict__)
 
+'''
+    Restful API设计
+    Administrator 模块
+    登录
+        POST /administrators
+'''
+@app.route('/administrators/account', methods=['POST'])
+def administrator_login_by_account():
+    # 获取前端发送来json格式的数据
+    data = request.get_json(force=True)
+    # 创建一个新的Administrator对象
+    administrator = Administrator(**data)
+    # 查询数据库中是否存在对应的管理员
+    exist = Administrator.query.filter_by(admin_account=administrator.admin_account).first()
+
+    # 响应消息 与 状态码
+    msg = ''
+    code = ''
+    # 如果不存在对应的管理员，返回错误信息
+    if not exist:
+        msg = f"账号{administrator.admin_account}不存在！"
+        code = ResposeCode.ADD_ADMINISTRATOR_ERR.value
+    else:
+        # 如果存在对应的管理员，判断密码是否正确
+        if exist.admin_password == administrator.admin_password:
+            msg = f"登录成功！"
+            code = ResposeCode.ADD_ADMINISTRATOR_SUCCESS.value
+        else:
+            msg = f"账号{exist.admin_account}密码错误！"
+            code = ResposeCode.ADD_ADMINISTRATOR_ERR.value
+
+    return jsonify(APIResponse(code=code, data=None, msg=msg).__dict__)
 
 # ——————————————————————————————————————————————————————————————————
 # 登录+个人中心+个人图书城+信息专栏API部分

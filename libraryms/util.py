@@ -18,6 +18,7 @@ class ResposeCode(Enum):
             5 代表U_Borrow表
             6 代表Borrow表
             7 代表Consult表
+            8 代表Administrator表
             ...(待补充)
         第五位代表操作的类型
             1 代表增
@@ -102,6 +103,17 @@ class ResposeCode(Enum):
     DELETE_CONSULT_ERR = 40072
     UPDATE_CONSULT_ERR = 40073
     GET_CONSULT_ERR = 40074
+
+    # Administrator表状态码
+    ADD_ADMINISTRATOR_SUCCESS = 20081
+    DELETE_ADMINISTRATOR_SUCCESS = 20082
+    UPDATE_ADMINISTRATOR_SUCCESS = 20083
+    GET_ADMINISTRATOR_SUCCESS = 20084
+
+    ADD_ADMINISTRATOR_ERR = 40081
+    DELETE_ADMINISTRATOR_ERR = 40082
+    UPDATE_ADMINISTRATOR_ERR = 40083
+    GET_ADMINISTRATOR_ERR = 40084
 
 
 def book_to_dict(book: Book):
